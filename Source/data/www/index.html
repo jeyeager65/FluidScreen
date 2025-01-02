@@ -1,0 +1,477 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="color-scheme" content="light dark" />
+    <link rel="stylesheet" href="css/pico.min.css" />
+    <title>FluidScreen Setup</title>
+    <style type="text/css">
+        label span {
+          vertical-align: text-bottom;
+          font-size: 0.8em;
+        }
+    </style>
+    <script type="text/javascript">
+
+        var settings;
+
+        var statusText, statusColor;
+
+        function e(id) {
+            return document.getElementById(id);
+        }
+
+        function hexToRgb565(hex) {
+          hex = hex.replace("#", "");
+    
+          const r = parseInt(hex.substring(0, 2), 16);
+          const g = parseInt(hex.substring(2, 4), 16);
+          const b = parseInt(hex.substring(4, 6), 16);
+    
+          return "0x" + (((r & 0xf8)<<8)+((g & 0xfc)<<3)+((b & 0xf8)>>3)).toString(16).padStart(4, '0').toUpperCase();
+        }
+    
+        function rgb565ToHex(color) {
+          var red = (color & 0xF800) >> 11;
+          var green = (color & 0x07E0) >> 5;
+          var blue = color & 0x001F;
+    
+          // Convert to 8-bit values
+          red = Math.round((red * 255) / 31);
+          green = Math.round((green * 255) / 63);
+          blue = Math.round((blue * 255) / 31);
+    
+          // Convert to hexadecimal
+          var hex = "#" + 
+            red.toString(16).padStart(2, '0') +
+            green.toString(16).padStart(2, '0') +
+            blue.toString(16).padStart(2, '0');
+    
+          return hex;
+        }
+
+        function loadColor(elem, color) {
+            elem.value = rgb565ToHex(color);
+            updateColor(elem);
+        }
+
+        function updateColor(elem) {
+            var colorElem565 = e(elem.id + "_rgb565");
+            var colorElemDetail = e(elem.id + "_detail");
+            colorElem565.value = hexToRgb565(elem.value);
+            colorElemDetail.innerHTML = " (Hex: " + elem.value + " - RGB565: " + colorElem565.value + ")";
+
+            if(elem.dataset.label) {
+              statusText = elem.dataset.label;
+              statusColor = elem.value;
+            }
+            
+            drawPreview();
+        }
+
+        function drawPreview() {
+          var canvas = e("preview1");
+          var context = canvas.getContext("2d");
+          context.clearRect(0, 0, canvas.width, canvas.height);
+
+          context.fillStyle = e("background").value;
+          context.fillRect(0, 0, 320, 240);
+          
+          // Defaults
+          context.lineWidth = "1";
+
+          // Draw Status
+          context.beginPath();
+          context.strokeStyle = e("border").value;
+          context.fillStyle = statusColor;
+          context.rect(0,0,320,30);
+          context.fill();
+          context.stroke();
+          context.font = "bold 22px Arial";
+          context.fillStyle = e("text").value;
+          context.textAlign = "center";
+          context.fillText(statusText, 320/2, 23);
+
+          // Draw Position
+          context.beginPath();
+          context.strokeStyle = e("border").value;
+          context.fillStyle = e("backgroundpanel").value;
+          context.rect(0,30-1,320,20);
+          context.fill();
+          context.stroke();
+          context.moveTo(320/3,30-1);
+          context.lineTo(320/3,30-1+20);
+          context.stroke();
+          context.moveTo((320/3)*2,30-1);
+          context.lineTo((320/3)*2,30-1+20);
+          context.stroke();
+          context.font = "16px Arial";
+          context.textAlign = "left";
+          context.fillStyle = e("text").value;
+          context.fillText("X: 0000.000", 3+((320/3)*0), 45);
+          context.fillText("Y: 0000.000", 3+((320/3)*1), 45);
+          context.fillText("Z: 0000.000", 3+((320/3)*2), 45);
+
+          // Draw Main Menu
+          var menuHeight = 24;
+          context.beginPath();
+          context.strokeStyle = e("border").value;
+          context.fillStyle = e("primary").value;
+          context.rect(0,240-menuHeight,320,menuHeight);
+          context.fill();
+          context.stroke();
+          context.font = "16px Arial";
+          context.textAlign = "center";
+          context.fillStyle = e("text").value;
+          
+          for(var i = 0; i < 5; i++) {
+            if(i == 0) {
+              context.beginPath();
+              context.strokeStyle = e("border").value;
+              context.fillStyle = e("selected").value;
+              context.rect(0,240-menuHeight,320/5,menuHeight);
+              context.fill();
+              //context.stroke();
+            }
+
+            context.strokeStyle = e("border").value;
+            context.fillStyle = e("text").value;
+
+            context.moveTo((320/5)*i, 240-menuHeight);
+            context.lineTo((320/5)*i, 240);
+            context.stroke();
+            context.fillText("Menu " + (i+1), ((320/5)*i) + (320/5/2), 240-6);
+          }
+          
+          // Draw Sub Menu
+          var menuHeight = 24;
+          context.beginPath();
+          context.strokeStyle = e("border").value;
+          context.fillStyle = e("secondary").value;
+          context.rect(0,240-(menuHeight*2),320,menuHeight);
+          context.fill();
+          context.stroke();
+          context.font = "16px Arial";
+          context.textAlign = "center";
+          context.fillStyle = e("text").value;
+          
+          for(var i = 0; i < 4; i++) {
+            if(i == 0) {
+              context.beginPath();
+              context.strokeStyle = e("border").value;
+              context.fillStyle = e("selected").value;
+              context.rect(320/4,240-(menuHeight*2),320/4,menuHeight);
+              context.fill();
+              //context.stroke();
+            }
+
+            context.strokeStyle = e("border").value;
+            context.fillStyle = e("text").value;
+
+            context.moveTo((320/4)*i, 240-(menuHeight*2)+1);
+            context.lineTo((320/4)*i, 240-menuHeight);
+            context.stroke();
+            context.fillText(i == 0 ? "Back" : "Sub " + (i), ((320/4)*i) + (320/4/2), 240-menuHeight-6);
+          }
+
+          // Draw Message
+          context.beginPath();
+          context.strokeStyle = e("border").value;
+          context.fillStyle = e("backgroundalt").value;
+          context.roundRect(0,60,320,120,5);
+          context.fill();
+          context.stroke();
+          context.font = "10px Arial";
+          context.textAlign = "left";
+          context.fillStyle = e("text").value;
+          var measure = context.measureText("Last Message");
+          context.fillStyle = e("background").value;
+          context.fillRect(8,55,measure.width+5, 10);
+          context.fillStyle = e("text").value;
+          context.fillText("Last Message", 10, 63);
+
+          context.font = "18px Arial";
+          var messageHeight = 24;
+          context.fillText("Lorem ipsum dolor sit amet,", 5, 85);
+          context.fillText("consectetur adipiscing elit. Donec", 5, 85+(1*messageHeight));
+          context.fillText("iaculis efficitur porta.", 5, 85+(2*messageHeight));
+        }
+      </script>
+  </head>
+  <body>
+    <header class="container">
+        <hgroup>
+          <h1>FluidScreen Setup</h1>
+          <p>Perform updates as needed and click the Save button.  When complete, click the Restart button to return to standard operating mode.</p>
+        </hgroup>
+        <nav>
+            <div>
+              <button type="button" onclick="save();">Save</button>
+              <button type="button" onclick="restart();">Restart</button>
+            </div>
+            <ul>
+                <li><a href="#" data-theme-switcher="auto">Auto</a></li>
+                <li><a href="#" data-theme-switcher="light">Light</a></li>
+                <li><a href="#" data-theme-switcher="dark">Dark</a></li>
+            </ul>
+        </nav>
+        <hr />
+    </header>
+    <main class="container">
+        <dialog>
+            <article>
+              <header>
+                <button aria-label="Close" rel="prev"></button>
+                <p>
+                  <strong>Restarting</strong>
+                </p>
+              </header>
+              <p>
+                Settings updated.  Restart will occur within 5 seconds.
+              </p>
+            </article>
+          </dialog>
+        <div class="grid">
+        <section id="wifi">
+            <h2>WiFi Settings</h2>
+            <label>Network SSID<input type="text" id="ssid" name="ssid" /></label>
+            <label>Password<input type="password" id="password" name="password" /></label>
+        </section>
+        <section id="fluidnc">
+            <h2>FluidNC Settings</h2>
+            <label>URL (IP or Address)<input type="text" id="address" name="address" /></label>
+            <label>Port<input type="number" id="port" name="port" min="0" max="1023" /></label>
+        </section>
+    </div>
+    <div class="grid">
+        <section id="preview">
+          <h2>Preview</h2>
+          <canvas id="preview1" width="320px" height="240px">
+
+          </canvas>
+          <br /><br />
+          <button onclick="loadDefaultColors()">Restore Default Colors</button>
+          <br /><br />
+          <button onclick="preview()">Preview on Device</button>
+        </section>
+        <section id="baseColors">
+            <h2>Base Theme Colors</h2>
+            <label>Primary <span id="primary_detail"></span>
+              <input type="color" id="primary" name="primary" oninput="updateColor(this);" onfocus="updateColor(this);" />
+              <input type="hidden" id="primary_rgb565" name="primary_rgb565" />
+            </label>
+            <label>Secondary <span id="secondary_detail"></span>
+              <input type="color" id="secondary" name="secondary" oninput="updateColor(this);" onfocus="updateColor(this);" />
+              <input type="hidden" id="secondary_rgb565" name="secondary_rgb565" />
+            </label>
+            <label>Background <span id="background_detail"></span>
+              <input type="color" id="background" name="background" oninput="updateColor(this);" onfocus="updateColor(this);" />
+              <input type="hidden" id="background_rgb565" name="background_rgb565" />
+            </label>
+            <label>Background Alt <span id="backgroundalt_detail"></span>
+              <input type="color" id="backgroundalt" name="backgroundalt" oninput="updateColor(this);" onfocus="updateColor(this);" />
+              <input type="hidden" id="backgroundalt_rgb565" name="backgroundalt_rgb565" />
+            </label>
+            <label>Background Panel <span id="backgroundpanel_detail"></span>
+              <input type="color" id="backgroundpanel" name="backgroundpanel" oninput="updateColor(this);" onfocus="updateColor(this);" />
+              <input type="hidden" id="backgroundpanel_rgb565" name="backgroundpanel_rgb565" />
+            </label>
+            <label>Border <span id="border_detail"></span>
+              <input type="color" id="border" name="border" oninput="updateColor(this);" onfocus="updateColor(this);" />
+              <input type="hidden" id="border_rgb565" name="border_rgb565" />
+            </label>
+            <label>Selected <span id="selected_detail"></span>
+              <input type="color" id="selected" name="selected" oninput="updateColor(this);" onfocus="updateColor(this);" />
+              <input type="hidden" id="selected_rgb565" name="selected_rgb565" />
+            </label>
+            <label>Text <span id="text_detail"></span>
+              <input type="color" id="text" name="text" oninput="updateColor(this);" onfocus="updateColor(this);" />
+              <input type="hidden" id="text_rgb565" name="text_rgb565" />
+            </label>
+            <label>QR Code <span id="qrcode_detail"></span>
+              <input type="color" id="qrcode" name="qrcode" oninput="updateColor(this);" onfocus="updateColor(this);" />
+              <input type="hidden" id="qrcode_rgb565" name="qrcode_rgb565" />
+            </label>
+            <label>QR Code Background <span id="qrcodebg_detail"></span>
+              <input type="color" id="qrcodebg" name="qrcodebg" oninput="updateColor(this);" onfocus="updateColor(this);" />
+              <input type="hidden" id="qrcodebg_rgb565" name="qrcodebg_rgb565" />
+            </label>
+        </section>
+        <section id="statusColors">
+            <h2>Status Colors</h2>
+            <label>Default <span id="state_default_detail"></span>
+                <input type="color" id="state_default" name="state_default" data-label="DEFAULT"  oninput="updateColor(this);"  onfocus="updateColor(this);" />
+                <input type="hidden" id="state_default_rgb565" name="state_default_rgb565" />
+            </label>
+            <label>Idle <span id="state_idle_detail"></span>
+                <input type="color" id="state_idle" name="state_idle" data-label="IDLE"  oninput="updateColor(this);"  onfocus="updateColor(this);" />
+                <input type="hidden" id="state_idle_rgb565" name="state_idle_rgb565" />
+            </label>
+            <label>Jog <span id="state_jog_detail"></span>
+                <input type="color" id="state_jog" name="state_jog" data-label="JOG"  oninput="updateColor(this);"  onfocus="updateColor(this);" />
+                <input type="hidden" id="state_jog_rgb565" name="state_jog_rgb565" />
+            </label>
+            <label>Run <span id="state_run_detail"></span>
+                <input type="color" id="state_run" name="state_run" data-label="RUN"  oninput="updateColor(this);"  onfocus="updateColor(this);" />
+                <input type="hidden" id="state_run_rgb565" name="state_run_rgb565" />
+            </label>
+            <label>Hold <span id="state_hold_detail"></span>
+                <input type="color" id="state_hold" name="state_hold" data-label="HOLD"  oninput="updateColor(this);"  onfocus="updateColor(this);" />
+                <input type="hidden" id="state_hold_rgb565" name="state_hold_rgb565" />
+            </label>
+            <label>Home <span id="state_home_detail"></span>
+                <input type="color" id="state_home" name="state_home" data-label="HOME"  oninput="updateColor(this);"  onfocus="updateColor(this);" />
+                <input type="hidden" id="state_home_rgb565" name="state_home_rgb565" />
+            </label>
+            <label>Alarm <span id="state_alarm_detail"></span>
+                <input type="color" id="state_alarm" name="state_alarm" data-label="ALARM"  oninput="updateColor(this);"  onfocus="updateColor(this);" />
+                <input type="hidden" id="state_alarm_rgb565" name="state_alarm_rgb565" />
+            </label>
+            <label>Disconnect <span id="state_disconnect_detail"></span>
+                <input type="color" id="state_disconnect" name="state_disconnect" data-label="DISCONNECTED"  oninput="updateColor(this);"  onfocus="updateColor(this);" />
+                <input type="hidden" id="state_disconnect_rgb565" name="state_disconnect_rgb565" />
+            </label>
+            <label>Configuration <span id="state_config_detail"></span>
+                <input type="color" id="state_config" name="state_config" data-label="CONFIGURATION"  oninput="updateColor(this);"  onfocus="updateColor(this);" />
+                <input type="hidden" id="state_config_rgb565" name="state_config_rgb565" />
+            </label>
+            <label style="visibility: hidden;">Hidden <span></span>
+                <input type="color" />
+            </label>
+        </section>
+        </div>
+    </main>
+  </body>
+  <script type="text/javascript">
+
+    function loadDefaultColors() {
+      fetch("default")
+        .then(response => response.json())
+        .then(data => {
+          console.log(JSON.stringify(data));
+
+          loadColor(e("primary"), data.ThemeColors.Primary);
+          loadColor(e("secondary"), data.ThemeColors.Secondary);
+          loadColor(e("background"), data.ThemeColors.Background);
+          loadColor(e("backgroundalt"), data.ThemeColors.BackgroundAlt);
+          loadColor(e("backgroundpanel"), data.ThemeColors.BackgroundPanel);
+          loadColor(e("border"), data.ThemeColors.Border);
+          loadColor(e("selected"), data.ThemeColors.Selected);
+          loadColor(e("text"), data.ThemeColors.Text);
+          loadColor(e("qrcode"), data.ThemeColors.QrCode);
+          loadColor(e("qrcodebg"), data.ThemeColors.QrCodeBg);
+          loadColor(e("state_idle"), data.StatusColors.Idle);
+          loadColor(e("state_jog"), data.StatusColors.Jog);
+          loadColor(e("state_run"), data.StatusColors.Run);
+          loadColor(e("state_hold"), data.StatusColors.Hold);
+          loadColor(e("state_home"), data.StatusColors.Home);
+          loadColor(e("state_alarm"), data.StatusColors.Alarm);
+          loadColor(e("state_disconnect"), data.StatusColors.Disconnect);
+          loadColor(e("state_config"), data.StatusColors.Configuration);
+          loadColor(e("state_default"), data.StatusColors.Default);
+
+          drawPreview();
+        });
+    }
+
+    function syncSettings() {
+      settings.IsInitialized = true;
+      settings.IsConfigMode = false;
+      
+      settings.Connection.SSID = e("ssid").value;
+      settings.Connection.Password = e("password").value;
+      settings.Connection.Address = e("address").value;
+      settings.Connection.Port = parseInt(e("port").value);
+
+      settings.ThemeColors.Primary = parseInt(e("primary_rgb565").value);
+      settings.ThemeColors.Secondary = parseInt(e("secondary_rgb565").value);
+      settings.ThemeColors.Background = parseInt(e("background_rgb565").value);
+      settings.ThemeColors.BackgroundAlt = parseInt(e("backgroundalt_rgb565").value);
+      settings.ThemeColors.BackgroundPanel = parseInt(e("backgroundpanel_rgb565").value);
+      settings.ThemeColors.Border = parseInt(e("border_rgb565").value);
+      settings.ThemeColors.Selected = parseInt(e("selected_rgb565").value);
+      settings.ThemeColors.Text = parseInt(e("text_rgb565").value);
+      settings.ThemeColors.QrCode = parseInt(e("qrcode_rgb565").value);
+      settings.ThemeColors.QrCodeBg = parseInt(e("qrcodebg_rgb565").value);
+      settings.StatusColors.Idle = parseInt(e("state_idle_rgb565").value);
+      settings.StatusColors.Jog = parseInt(e("state_jog_rgb565").value);
+      settings.StatusColors.Run = parseInt(e("state_run_rgb565").value);
+      settings.StatusColors.Hold = parseInt(e("state_hold_rgb565").value);
+      settings.StatusColors.Home = parseInt(e("state_home_rgb565").value);
+      settings.StatusColors.Alarm = parseInt(e("state_alarm_rgb565").value);
+      settings.StatusColors.Disconnect = parseInt(e("state_disconnect_rgb565").value);
+      settings.StatusColors.Configuration = parseInt(e("state_config_rgb565").value);
+      settings.StatusColors.Default = parseInt(e("state_default_rgb565").value);
+    }
+
+    function save() {
+      console.log(JSON.stringify(settings));
+      
+      syncSettings();
+
+      fetch("update",
+        {
+          method: "POST",
+          headers: new Headers({"Content-Type": "application/json"}),
+          body: JSON.stringify(settings)
+        }
+      );
+    }
+
+    function preview() {
+      console.log(JSON.stringify(settings));
+      
+      syncSettings();
+
+      fetch("preview",
+        {
+          method: "POST",
+          headers: new Headers({"Content-Type": "application/json"}),
+          body: JSON.stringify(settings)
+        }
+      );
+    }
+
+    function restart() {
+      fetch("restart");
+    }
+
+    fetch("current")
+      .then(response => response.json())
+      .then(data => {
+        console.log(JSON.stringify(data));
+
+        settings = data;
+
+        e("ssid").value = data.Connection.SSID;
+        e("password").value = data.Connection.Password;
+        e("address").value = data.Connection.Address;
+        e("port").value = data.Connection.Port;
+
+        loadColor(e("primary"), data.ThemeColors.Primary);
+        loadColor(e("secondary"), data.ThemeColors.Secondary);
+        loadColor(e("background"), data.ThemeColors.Background);
+        loadColor(e("backgroundalt"), data.ThemeColors.BackgroundAlt);
+        loadColor(e("backgroundpanel"), data.ThemeColors.BackgroundPanel);
+        loadColor(e("border"), data.ThemeColors.Border);
+        loadColor(e("selected"), data.ThemeColors.Selected);
+        loadColor(e("text"), data.ThemeColors.Text);
+        loadColor(e("qrcode"), data.ThemeColors.QrCode);
+        loadColor(e("qrcodebg"), data.ThemeColors.QrCodeBg);
+        loadColor(e("state_idle"), data.StatusColors.Idle);
+        loadColor(e("state_jog"), data.StatusColors.Jog);
+        loadColor(e("state_run"), data.StatusColors.Run);
+        loadColor(e("state_hold"), data.StatusColors.Hold);
+        loadColor(e("state_home"), data.StatusColors.Home);
+        loadColor(e("state_alarm"), data.StatusColors.Alarm);
+        loadColor(e("state_disconnect"), data.StatusColors.Disconnect);
+        loadColor(e("state_config"), data.StatusColors.Configuration);
+        loadColor(e("state_default"), data.StatusColors.Default);
+
+        drawPreview();
+      });
+
+  </script>
+  <script src="js/theme-switcher.js"></script>
+</html>
