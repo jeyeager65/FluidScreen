@@ -1,8 +1,8 @@
 # FluidScreen
 Wireless controller for FluidNC
 
+![e19302e4588211ce1077c6e39101f643c2d2b93d](https://github.com/user-attachments/assets/e4b53310-34f3-468c-906b-707aa155567e)
 ![20250101_100233](https://github.com/user-attachments/assets/ceba9de2-fea9-43f2-af1a-83d94e07b5c3)
-
 
 ## Overview
 This is a wireless controller (except for power) for a 3 axis CNC machine running FluidNC.  It connects to FluidNC via a WebSocket connection.  This uses an ESP32 and is written in C++ using PlatformIO.
