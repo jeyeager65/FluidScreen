@@ -68,7 +68,7 @@ unsigned long lastDrawTime = 0;
 unsigned long drawDelay = 50;
 
 unsigned long lastMacroInfoTime = 0;
-unsigned long macroInfoDelay = 200;
+unsigned long macroInfoDelay = 300;
 
 unsigned long lastJogTime = 0;
 unsigned long jogDelay = 200;
@@ -77,26 +77,26 @@ bool jogActive = false;
 // Colors
 // RGB565 Colors - https://learn.adafruit.com/adafruit-gfx-graphics-library/coordinate-system-and-units
 // Converter - https://barth-dev.de/online/rgb565-color-picker/
-uint16_t COLOR_PRIMARY   = 0x7800;        // #7a0000
-uint16_t COLOR_SECONDARY = 0xA800;        // #ad0000
-uint16_t COLOR_BG        = 0x0000;        // #000000
-uint16_t COLOR_BG_ALT    = 0x4A69;        // #4d4d4d
-uint16_t COLOR_BG_PANEL  = 0x31A6;        // #363636
-uint16_t COLOR_BORDER    = 0xD6BA;        // #d6d6d6
-uint16_t COLOR_SELECT    = 0xF800;        // #ff0000
-uint16_t COLOR_TEXT      = 0xFFFF;        
-uint16_t COLOR_QR        = 0x0000;
-uint16_t COLOR_QR_BG     = 0xFFFF;
+uint16_t COLOR_PRIMARY           = 0x01EC;  // #003d63
+uint16_t COLOR_SECONDARY         = 0x434F;  // #42697b
+uint16_t COLOR_BG                = 0x0841;  // #080808
+uint16_t COLOR_BG_ALT            = 0x39C7;  // #3a393a
+uint16_t COLOR_BG_PANEL          = 0x2104;  // #212021
+uint16_t COLOR_BORDER            = 0xBE19;  // #bdc2ce
+uint16_t COLOR_SELECT            = 0x0397;  // #0071bd
+uint16_t COLOR_TEXT              = 0xFFFF;  // #ffffff
+uint16_t COLOR_QR                = 0x0000;  // #000000
+uint16_t COLOR_QR_BG             = 0xFFFF;  // #ffffff
 
-uint16_t COLOR_STATUS_DEFAULT    = 0x7BEF;
-uint16_t COLOR_STATUS_IDLE       = 0x7BEF;
-uint16_t COLOR_STATUS_JOG        = 0x000F;
-uint16_t COLOR_STATUS_RUN        = 0x03E0;
-uint16_t COLOR_STATUS_HOLD       = 0xFFE0;
-uint16_t COLOR_STATUS_HOME       = 0x03EF;
-uint16_t COLOR_STATUS_ALARM      = 0xF800;
-uint16_t COLOR_STATUS_DISCONNECT = 0x780F;
-uint16_t COLOR_STATUS_CONFIG     = 0xFB80;
+uint16_t COLOR_STATUS_DEFAULT    = 0x7BEF;  // #7b7d7b
+uint16_t COLOR_STATUS_IDLE       = 0x7BEF;  // #7b7d7b
+uint16_t COLOR_STATUS_JOG        = 0x000F;  // #00007b
+uint16_t COLOR_STATUS_RUN        = 0x03E0;  // #007d00
+uint16_t COLOR_STATUS_HOLD       = 0xE660;  // #e6ce00
+uint16_t COLOR_STATUS_HOME       = 0x03EF;  // #007d7b
+uint16_t COLOR_STATUS_ALARM      = 0xF800;  // #ff0000
+uint16_t COLOR_STATUS_DISCONNECT = 0x780F;  // #7b007b
+uint16_t COLOR_STATUS_CONFIG     = 0xFB80;  // #ff7100
 
 // Display Values
 String grblState = "UNKNOWN";
@@ -111,16 +111,31 @@ Adafruit_ILI9341 tft = Adafruit_ILI9341(TFT_CS_PIN, TFT_DC_PIN, TFT_RST_PIN);
 
 WebSocketsClient webSocket;
 
-void initWiFi() 
+bool initWiFi() 
 {
+  if(WiFi.status() == WL_CONNECTED) {
+    return true;
+  }
+
+  int retryCount = 20;
   WiFi.mode(WIFI_STA);
+  WiFi.setAutoReconnect(true);
   WiFi.begin(CurrentSettings.Connection.SSID, CurrentSettings.Connection.Password);
   Serial.print("Connecting to WiFi ..");
   while (WiFi.status() != WL_CONNECTED) {
     Serial.print('.');
-    delay(1000);
+
+    if(retryCount > 0) {
+      delay(1000);
+      retryCount--;
+    }
+    else {
+      WiFi.setAutoReconnect(false);
+      return false;
+    }
   }
   Serial.println(WiFi.localIP());
+  return true;
 }
 
 String convert(uint8_t *str, int length)
@@ -215,42 +230,36 @@ void drawMenu() {
   }
 }
 
-void drawMessage() {
+void drawMessage(String message) {
   int16_t x1, y1;
   uint16_t width, height;
-  const char * label = "Last Message";
 
-  setupTextArea(0,55,320,125);
+  setupTextArea(0,50,320,135);
 
-  tft.fillRoundRect(0,55+5, 320, 125-5, 5, COLOR_BG_ALT);
-  tft.drawRoundRect(0,55+5, 320, 125-5, 5, COLOR_BORDER);
-  tft.setCursor(10, 55+7);
-  tft.setFont();
-  tft.getTextBounds(label, tft.getCursorX(), tft.getCursorY(), &x1, &y1, &width, &height);
-  tft.fillRect(x1-2, y1, width+4, height-1, COLOR_BG);
-  tft.print(label);
+  tft.fillRoundRect(0,50+5, 320, 135-5, 5, COLOR_BG_ALT);
+  tft.drawRoundRect(0,50+5, 320, 135-5, 5, COLOR_BORDER);
 
   // Clean Message
-  if(lastMessage.startsWith("[MSG:")) {
-    int startIndex = lastMessage.indexOf(":", 5)+2;
-    int tempStartIndex = lastMessage.indexOf(",", startIndex+1);
+  if(message.startsWith("[MSG:")) {
+    int startIndex = message.indexOf(":", 5)+2;
+    int tempStartIndex = message.indexOf(",", startIndex+1);
     if(tempStartIndex >= 0) { startIndex = tempStartIndex+2; }
-    int endIndex = lastMessage.lastIndexOf("]");
-    lastMessage = lastMessage.substring(startIndex, endIndex);
+    int endIndex = message.lastIndexOf("]");
+    message = message.substring(startIndex, endIndex);
   }
 
-  lastMessage.trim();
+  message.trim();
 
   // Break at spaces
   bool includeSpace = false;
   char * ptr;
-  int length = lastMessage.length();
+  int length = message.length();
   char buffer[length];
-  sprintf(buffer, "%s", lastMessage.c_str());
+  sprintf(buffer, "%s", message.c_str());
 
   tft.setFont(&FreeSans9pt7b);
   
-  tft.setCursor(2,60+30-8+2);
+  tft.setCursor(5,74);
   tft.setTextWrap(true);
 
   ptr = strtok(buffer, " ");
@@ -258,9 +267,9 @@ void drawMessage() {
   {
     tft.getTextBounds(ptr, tft.getCursorX(), tft.getCursorY(), &x1, &y1, &width, &height);
 
-    if(x1 + width > 320-10) {
+    if(x1 + width > 320-20) {
       tft.println("");
-      tft.setCursor(2, tft.getCursorY());
+      tft.setCursor(5, tft.getCursorY());
       includeSpace = false;
     }
 
@@ -272,6 +281,10 @@ void drawMessage() {
     ptr = strtok(NULL, " ");
     includeSpace = true;
   }
+}
+
+void drawMessage() {
+  drawMessage(lastMessage); 
 }
 
 void drawStatus(String status, bool preventDuplicate = true) {
@@ -353,6 +366,8 @@ void webSocketEvent(WStype_t type, uint8_t * payload, size_t length) {
 		case WStype_DISCONNECTED:
 			Serial.printf("[WSc] Disconnected!\n");
       drawStatus("Disconnected");
+      lastMessage = "Disconnected from FluidNC";
+      drawMessage();
       wsDisconnected = true;
 			break;
 		case WStype_CONNECTED:
@@ -361,7 +376,7 @@ void webSocketEvent(WStype_t type, uint8_t * payload, size_t length) {
 
 			// send message to server when Connected
       webSocket.sendTXT("Connected\n");
-      webSocket.sendTXT("$Report/Interval=100\n");
+      webSocket.sendTXT("$Report/Interval=200\n");
       
 			break;
 		case WStype_TEXT:
@@ -396,13 +411,20 @@ void webSocketEvent(WStype_t type, uint8_t * payload, size_t length) {
       }
       else if(length > 4 && temp.startsWith("[MSG")) // Ignore "ok" for now
       {
-        lastMessage = convert(payload, length);
-        if((menu[menuSelected] != "Jog" || jogMenuSelected == 0))
-        {
-          if(lastMessage.indexOf("websocket auto report") >= 0) {
-            lastMessage = "Ready";
+        // Don't store macro messages as the last message so it isn't re-displayed
+        if((menu[menuSelected] == "Macro" && macroMenuSelected > 0)) {
+          String macroMessage = convert(payload, length);
+          drawMessage(macroMessage);
+        }
+        else {
+          lastMessage = convert(payload, length);
+          if((menu[menuSelected] != "Jog" || jogMenuSelected == 0))
+          {
+            if(lastMessage.indexOf("websocket auto report") >= 0) {
+              lastMessage = "Ready";
+            }
+            drawMessage();
           }
-          drawMessage();
         }
       }
 			break;
@@ -422,7 +444,7 @@ void initWebSocket()
   wsDisconnected = false;
   webSocket.begin(CurrentSettings.Connection.Address, CurrentSettings.Connection.Port);
   webSocket.onEvent(webSocketEvent);
-  webSocket.setReconnectInterval(500);
+  webSocket.setReconnectInterval(1000);
 }
 
 void rotate(ESPRotary& r) {
@@ -501,6 +523,7 @@ void drawConfig() {
 
   drawStatus("Configuration", false);
 
+  tft.fillRoundRect(0,40,320-140, 240-40, 5, COLOR_BG_PANEL);
   tft.drawRoundRect(0,40,320-140, 240-40, 5, COLOR_BORDER);
   tft.setCursor(5, 60);
   tft.setFont(&FreeSans9pt7b);
@@ -529,6 +552,27 @@ void drawPreview() {
   drawMessage();
 
   drawMenu();
+}
+
+void connect() {
+  drawStatus("Initializing");
+  lastMessage = "Connecting to Wifi Network ";
+  lastMessage.concat(CurrentSettings.Connection.SSID);
+  drawMessage();
+  bool wifiSuccess = initWiFi();
+
+  if(wifiSuccess) {
+    lastMessage = "Connecting to FluidNC at ";
+    lastMessage.concat(CurrentSettings.Connection.Address);
+    lastMessage.concat(":");
+    lastMessage.concat(CurrentSettings.Connection.Port);
+    drawMessage();
+    initWebSocket();
+  } else {
+    drawStatus("DISCONNECTED");
+    lastMessage = "Error connecting to Wifi";
+    drawMessage();
+  }
 }
 
 void setup() {
@@ -583,17 +627,7 @@ void setup() {
   drawMenu();
   joystick.init();
 
-  drawStatus("Initializing");
-  lastMessage = "Connecting to Wifi Network ";
-  lastMessage.concat(CurrentSettings.Connection.SSID);
-  drawMessage();
-  initWiFi();
-  lastMessage = "Connecting to FluidNC at ";
-  lastMessage.concat(CurrentSettings.Connection.Address);
-  lastMessage.concat(":");
-  lastMessage.concat(CurrentSettings.Connection.Port);
-  drawMessage();
-  initWebSocket();
+  connect();
 }
 
 void home(String axis) {
@@ -655,22 +689,27 @@ void handleButtonPress()
     if(menu[menuSelected] == "Jog") {
       jogMenuSelected = 0;
       encoderMaxCount = jogMenuSize-1;
+      drawMessage("Highlight a Jog Mode to enable joystick control.");
     }
     else if(menu[menuSelected] == "Home") {
       homeMenuSelected = 0;
       encoderMaxCount = homeMenuSize-1;
+      drawMessage("Select an axis option to home.");
     }
     else if(menu[menuSelected] == "Macro") {
       macroMenuSelected = 0;
       encoderMaxCount = macroMenuSize-1;
+      drawMessage("Highlight a macro number to view details.");
     }
     else if(menu[menuSelected] == "Other") {
       otherMenuSelected = 0;
       encoderMaxCount = otherMenuSize-1;
+      drawMessage("Select an option.");
     }
     else if(menu[menuSelected] == "Main") {
       controlMenuSelected = 0;
       encoderMaxCount = controlMenuSize-1;
+      drawMessage();
     }
 
     menuEncoder.setUpperBound(encoderMaxCount);
@@ -709,15 +748,7 @@ void handleButtonPress()
         goBack = true;
       } else if(otherMenuSelected > 0) {
         if(otherMenu[otherMenuSelected] == "Conn") {
-          if(wsDisconnected)
-          {
-            lastMessage = "Reconnecting to WebSocket";
-            drawMessage();
-            initWebSocket();
-          } else {
-            lastMessage = "WebSocket Already Connected";
-            drawMessage();
-          }
+          connect();
         } 
         else if(otherMenu[otherMenuSelected] == "Setup") {
           lastMessage = "Rebooting in 5 Seconds into Setup Mode";
@@ -757,6 +788,7 @@ void handleButtonPress()
       encoderCounter = menuSelected;
       menuEncoder.setUpperBound(encoderMaxCount);
       menuEncoder.resetPosition(encoderCounter);
+      drawMessage();
       return;
     }
   }
@@ -806,8 +838,8 @@ void loop() {
     joystick.loop();
   }
 
+  // Process button presses
   int buttonStateCurr = digitalRead(ENCODER_SW_PIN);
-
   if((millis() - lastButtonTime) > 100) {
     if(buttonStateCurr != buttonState) {
       buttonState = buttonStateCurr;
@@ -822,39 +854,38 @@ void loop() {
   // Redraw Menu if Encoder Changed
   if (encoderPrevCounter != encoderCounter) {
     encoderPrevCounter = encoderCounter;
-    
-     if(menu[menuSelected] == "Jog" && menuLevel == 1) {
-       setupTextArea(0,55,320,125);
 
-       // If on Back, redraw last message
-       if(jogMenuSelected == 0) {
-        drawMessage();
-       }
-     } else if(menu[menuSelected] == "Macro" && menuLevel == 1) {
-        if(macroMenuSelected > 0) {
-          // Debounce getting macro info
-          if((millis() - lastMacroInfoTime) > macroInfoDelay) {
-            // Set to only display macro info
-            webSocket.sendTXT("#<_screenMacroInfoOnly>=1\n");
+    if (menu[menuSelected] == "Jog" && menuLevel == 1) {
+      setupTextArea(0, 50, 320, 135);
 
-            // Set specific macro number to get info for
-            String command = "#<_screenMacro>=" + macroMenu[macroMenuSelected] + "\n";
-            
-            webSocket.sendTXT(command);
-            webSocket.sendTXT("$SD/Run=_screenmacros.gcode\n");
-            lastMacroInfoTime = millis();
-          }
-          else {
-            encoderPrevCounter = -1; // Reset counter so it gets rechecked
-            lastMessage = "Loading...";
-            drawMessage();
-          }
+      // If on Back, set message
+      if (jogMenuSelected == 0) {
+        drawMessage("Highlight a Jog Mode to enable joystick control.");
+      }
+    }
+    else if (menu[menuSelected] == "Macro" && menuLevel == 1) {
+      if (macroMenuSelected > 0) {
+        // Debounce getting macro info
+        if ((millis() - lastMacroInfoTime) > macroInfoDelay) {
+          // Set to only display macro info
+          webSocket.sendTXT("#<_screenMacroInfoOnly>=1\n");
+
+          // Set specific macro number to get info for
+          String command = "#<_screenMacro>=" + macroMenu[macroMenuSelected] + "\n";
+
+          webSocket.sendTXT(command);
+          webSocket.sendTXT("$SD/Run=_screenmacros.gcode\n");
+          lastMacroInfoTime = millis();
         } else {
-          // Set message
-          lastMessage = "Highlight a macro number to view details.";
-          drawMessage();
+          encoderPrevCounter = -1; // Reset counter so it gets rechecked
+          drawMessage("Loading...");
         }
-     }
+      }
+      else {
+        // Set message
+        drawMessage("Highlight a macro number to view details.");
+      }
+    }
 
     drawMenu();
   }
@@ -907,7 +938,7 @@ void loop() {
         int joyPosX = centerX + (position.x*((float)45/100));
         int joyPosY = centerY + (position.y*((float)45/100));
 
-        joystickCanvas.fillCircle(joyPosX, joyPosY, 10, COLOR_PRIMARY);
+        joystickCanvas.fillCircle(joyPosX, joyPosY, 10, COLOR_SELECT);
         joystickCanvas.drawCircle(joyPosX, joyPosY, 10, COLOR_BORDER);
         joystickCanvas.fillCircle(joyPosX, joyPosY, 2, COLOR_BORDER);
 
@@ -951,7 +982,7 @@ void loop() {
         int joyPosX = centerX + (position.x*((float)45/100));
         int joyPosY = centerY;
 
-        joystickCanvas.fillCircle(joyPosX, joyPosY, 10, COLOR_PRIMARY);
+        joystickCanvas.fillCircle(joyPosX, joyPosY, 10, COLOR_SELECT);
         joystickCanvas.drawCircle(joyPosX, joyPosY, 10, COLOR_BORDER);
         joystickCanvas.fillCircle(joyPosX, joyPosY, 2, COLOR_BORDER);
 
@@ -996,7 +1027,7 @@ void loop() {
         int joyPosX = centerX;
         int joyPosY = centerY + (position.y*((float)45/100));
 
-        joystickCanvas.fillCircle(joyPosX, joyPosY, 10, COLOR_PRIMARY);
+        joystickCanvas.fillCircle(joyPosX, joyPosY, 10, COLOR_SELECT);
         joystickCanvas.drawCircle(joyPosX, joyPosY, 10, COLOR_BORDER);
         joystickCanvas.fillCircle(joyPosX, joyPosY, 2, COLOR_BORDER);
 
@@ -1041,7 +1072,7 @@ void loop() {
         int joyPosX = centerX;
         int joyPosY = centerY + (position.y*((float)45/100));
 
-        joystickCanvas.fillCircle(joyPosX, joyPosY, 10, COLOR_PRIMARY);
+        joystickCanvas.fillCircle(joyPosX, joyPosY, 10, COLOR_SELECT);
         joystickCanvas.drawCircle(joyPosX, joyPosY, 10, COLOR_BORDER);
         joystickCanvas.fillCircle(joyPosX, joyPosY, 2, COLOR_BORDER);
 

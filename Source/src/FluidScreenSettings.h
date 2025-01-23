@@ -42,26 +42,26 @@ void initDefaultSettings() {
     DefaultSettings.Connection.Address = "fluidnc.local";
     DefaultSettings.Connection.Port = 82;
 
-    DefaultSettings.ThemeColors.Primary = 0x7800;
-    DefaultSettings.ThemeColors.Secondary =  0xA800;
-    DefaultSettings.ThemeColors.Background = 0x0000;
-    DefaultSettings.ThemeColors.BackgroundAlt = 0x4A69;
-    DefaultSettings.ThemeColors.BackgroundPanel = 0x31A6;
-    DefaultSettings.ThemeColors.Border = 0xD6BA;
-    DefaultSettings.ThemeColors.Selected = 0xF800;
-    DefaultSettings.ThemeColors.Text = 0xFFFF;
-    DefaultSettings.ThemeColors.QrCode = 0x0000;
-    DefaultSettings.ThemeColors.QrCodeBg = 0xFFFF;
+    DefaultSettings.ThemeColors.Primary         = 0x01EC;  // #003d63
+    DefaultSettings.ThemeColors.Secondary       = 0x434F;  // #42697b
+    DefaultSettings.ThemeColors.Background      = 0x0841;  // #080808
+    DefaultSettings.ThemeColors.BackgroundAlt   = 0x39C7;  // #3a393a
+    DefaultSettings.ThemeColors.BackgroundPanel = 0x2104;  // #212021
+    DefaultSettings.ThemeColors.Border          = 0xBE19;  // #bdc2ce
+    DefaultSettings.ThemeColors.Selected        = 0x0397;  // #0071bd
+    DefaultSettings.ThemeColors.Text            = 0xFFFF;  // #ffffff
+    DefaultSettings.ThemeColors.QrCode          = 0x0000;  // #000000
+    DefaultSettings.ThemeColors.QrCodeBg        = 0xFFFF;  // #ffffff
 
-    DefaultSettings.StatusColors.Default = 0x7BEF;
-    DefaultSettings.StatusColors.Idle = 0x7BEF;
-    DefaultSettings.StatusColors.Jog = 0x000F;
-    DefaultSettings.StatusColors.Run = 0x03E0;
-    DefaultSettings.StatusColors.Hold = 0xFFE0;
-    DefaultSettings.StatusColors.Home = 0x03EF;
-    DefaultSettings.StatusColors.Alarm = 0xF800;
-    DefaultSettings.StatusColors.Disconnect = 0x780F;
-    DefaultSettings.StatusColors.Configuration = 0xFB80;
+    DefaultSettings.StatusColors.Default        = 0x7BEF;  // #7b7d7b
+    DefaultSettings.StatusColors.Idle           = 0x7BEF;  // #7b7d7b
+    DefaultSettings.StatusColors.Jog            = 0x000F;  // #00007b
+    DefaultSettings.StatusColors.Run            = 0x03E0;  // #007d00
+    DefaultSettings.StatusColors.Hold           = 0xE660;  // #e6ce00
+    DefaultSettings.StatusColors.Home           = 0x03EF;  // #007d7b
+    DefaultSettings.StatusColors.Alarm          = 0xF800;  // #ff0000
+    DefaultSettings.StatusColors.Disconnect     = 0x780F;  // #7b007b
+    DefaultSettings.StatusColors.Configuration  = 0xFB80;  // #ff7100
 }
 
 void debugSettings(FluidScreenSettings &settings) {
