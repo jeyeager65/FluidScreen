@@ -17,11 +17,17 @@
 void setupColors(FluidScreenSettings& settings);
 void drawConfig();
 void drawPreview();
+void drawMessage();
+void drawMessage(String message);
+void initWebSocket();
 
 #include "CaptivePortal.h"
 #include "SPIFFS.h"
 
-bool  wsDisconnected = false;
+const char* version = "1.0.0-20250130";
+
+bool wsFirstConnectAttempt = true;
+bool wsDisconnected = false;
 
 // Rotary Encoder Settings
 volatile int encoderCounter = 0;
@@ -29,7 +35,6 @@ int encoderPrevCounter;
 volatile int encoderMaxCount = 20;
 int buttonState;
 unsigned long lastButtonTime = 0;
-
 
 const byte ENCODER_CLK_PIN = 25;
 const byte ENCODER_DT_PIN = 26;
@@ -221,6 +226,11 @@ void drawMenu() {
   }
   else if(menu[menuSelected] == "Macro") {
     drawSubMenu(macroMenu, macroMenuSize, macroMenuSelected);
+
+    // Ensure macro message is displayed
+    if(macroMenuSelected == 0) {
+      drawMessage(macroMessage);
+    }
   }
   else if(menu[menuSelected] == "Other") {
     drawSubMenu(otherMenu, otherMenuSize, otherMenuSelected);
@@ -289,6 +299,7 @@ void drawMessage() {
 
 void drawStatus(String status, bool preventDuplicate = true) {
   bool isHold = status.startsWith("Hold");
+  bool isAlarm = status == "Alarm";
   
   grblState = status;
   if(preventDuplicate && grblState == grblStatePrev) return;
@@ -334,6 +345,16 @@ void drawStatus(String status, bool preventDuplicate = true) {
     encoderCounter = controlMenuSelected;
     menuEncoder.setUpperBound(encoderMaxCount);
     menuEncoder.resetPosition(encoderCounter);
+  } else if(isAlarm) {
+    // Auto-select Reset when Alarm occurs
+    menuSelected = 0; // Main
+    controlMenuSelected = 4; // Reset
+    menuLevel = 1;
+    encoderMaxCount = controlMenuSize-1;
+    encoderPrevCounter = -1;
+    encoderCounter = controlMenuSelected;
+    menuEncoder.setUpperBound(encoderMaxCount);
+    menuEncoder.resetPosition(encoderCounter);
   }
 }
 
@@ -365,14 +386,23 @@ void webSocketEvent(WStype_t type, uint8_t * payload, size_t length) {
 	switch(type) {
 		case WStype_DISCONNECTED:
 			Serial.printf("[WSc] Disconnected!\n");
-      drawStatus("Disconnected");
-      lastMessage = "Disconnected from FluidNC";
-      drawMessage();
-      wsDisconnected = true;
+      
+      // If first connection fails, try again
+      if(wsFirstConnectAttempt) {
+        wsFirstConnectAttempt = false;
+        initWebSocket();
+      }
+      else {
+        drawStatus("Disconnected");
+        lastMessage = "Disconnected from FluidNC";
+        drawMessage();
+        wsDisconnected = true;
+      }
 			break;
 		case WStype_CONNECTED:
 			Serial.printf("[WSc] Connected to url: %s\n", payload);
       webSocket.setReconnectInterval(86400000); // Disable reconnect - set to 24 hours
+      wsFirstConnectAttempt = false;
 
 			// send message to server when Connected
       webSocket.sendTXT("Connected\n");
@@ -421,7 +451,7 @@ void webSocketEvent(WStype_t type, uint8_t * payload, size_t length) {
           if((menu[menuSelected] != "Jog" || jogMenuSelected == 0))
           {
             if(lastMessage.indexOf("websocket auto report") >= 0) {
-              lastMessage = "Ready";
+              lastMessage = defaultMessage;
             }
             drawMessage();
           }
@@ -483,7 +513,7 @@ void drawQrCode(String content) {
   
   int mult = (125-25)/qrcode.size;
   int size = qrcode.size * mult;
-  int xStart = 320 - size - ((125 - size) / 2); // (320 - size) / 2;
+  int xStart = 320 - size - ((125 - size) / 2);
   int yStart = 75 + ((125 - size) / 2);
 
   for (uint8_t y = 0; y < qrcode.size; y++) {
@@ -689,27 +719,27 @@ void handleButtonPress()
     if(menu[menuSelected] == "Jog") {
       jogMenuSelected = 0;
       encoderMaxCount = jogMenuSize-1;
-      drawMessage("Highlight a Jog Mode to enable joystick control.");
+      drawMessage(jogMessage);
     }
     else if(menu[menuSelected] == "Home") {
       homeMenuSelected = 0;
       encoderMaxCount = homeMenuSize-1;
-      drawMessage("Select an axis option to home.");
+      drawMessage(homeMessage);
     }
     else if(menu[menuSelected] == "Macro") {
       macroMenuSelected = 0;
       encoderMaxCount = macroMenuSize-1;
-      drawMessage("Highlight a macro number to view details.");
+      drawMessage(macroMessage);
     }
     else if(menu[menuSelected] == "Other") {
       otherMenuSelected = 0;
       encoderMaxCount = otherMenuSize-1;
-      drawMessage("Select an option.");
+      drawMessage(otherMessage);
     }
     else if(menu[menuSelected] == "Main") {
       controlMenuSelected = 0;
       encoderMaxCount = controlMenuSize-1;
-      drawMessage();
+      drawMessage(controlMenuMessage);
     }
 
     menuEncoder.setUpperBound(encoderMaxCount);
@@ -757,6 +787,15 @@ void handleButtonPress()
           delay(5000);
           ESP.restart();
         }
+        else if(otherMenu[otherMenuSelected] == "Info") {
+          drawMessage("");
+          tft.setCursor(5, tft.getCursorY());
+          tft.printf("WiFi SSID: %s\n", CurrentSettings.Connection.SSID);
+          tft.setCursor(5, tft.getCursorY());
+          tft.printf("FluidNC: %s:%i\n\n", CurrentSettings.Connection.Address, CurrentSettings.Connection.Port);
+          tft.setCursor(5, 178);
+          tft.printf("Version: %s", version);
+        }
       }
     }
     else if(menu[menuSelected] == "Main") {
@@ -764,8 +803,8 @@ void handleButtonPress()
         controlMenuSelected = -1;
         goBack = true;
       } else {
-        lastMessage = "Command: " + controlMenu[controlMenuSelected];
-        drawMessage();
+        String message = "Command: " + controlMenu[controlMenuSelected];
+        drawMessage(message);
         if(controlMenu[controlMenuSelected] == "Hold") {
           webSocket.sendTXT("!\n");
         } else if(controlMenu[controlMenuSelected] == "Resume") {
@@ -788,7 +827,7 @@ void handleButtonPress()
       encoderCounter = menuSelected;
       menuEncoder.setUpperBound(encoderMaxCount);
       menuEncoder.resetPosition(encoderCounter);
-      drawMessage();
+      drawMessage(defaultMessage);
       return;
     }
   }
@@ -857,34 +896,51 @@ void loop() {
 
     if (menu[menuSelected] == "Jog" && menuLevel == 1) {
       setupTextArea(0, 50, 320, 135);
+    }
+    else if (menu[menuSelected] == "Macro" && menuLevel == 1 && macroMenuSelected > 0) {
+      // Debounce getting macro info
+      if ((millis() - lastMacroInfoTime) > macroInfoDelay) {
+        // Set to only display macro info
+        webSocket.sendTXT("#<_screenMacroInfoOnly>=1\n");
 
-      // If on Back, set message
-      if (jogMenuSelected == 0) {
-        drawMessage("Highlight a Jog Mode to enable joystick control.");
+        // Set specific macro number to get info for
+        String command = "#<_screenMacro>=" + macroMenu[macroMenuSelected] + "\n";
+
+        webSocket.sendTXT(command);
+        webSocket.sendTXT("$SD/Run=_screenmacros.gcode\n");
+        lastMacroInfoTime = millis();
+      } else {
+        encoderPrevCounter = -1; // Reset counter so it gets rechecked
+        drawMessage("Loading...");
       }
     }
-    else if (menu[menuSelected] == "Macro" && menuLevel == 1) {
-      if (macroMenuSelected > 0) {
-        // Debounce getting macro info
-        if ((millis() - lastMacroInfoTime) > macroInfoDelay) {
-          // Set to only display macro info
-          webSocket.sendTXT("#<_screenMacroInfoOnly>=1\n");
-
-          // Set specific macro number to get info for
-          String command = "#<_screenMacro>=" + macroMenu[macroMenuSelected] + "\n";
-
-          webSocket.sendTXT(command);
-          webSocket.sendTXT("$SD/Run=_screenmacros.gcode\n");
-          lastMacroInfoTime = millis();
-        } else {
-          encoderPrevCounter = -1; // Reset counter so it gets rechecked
-          drawMessage("Loading...");
-        }
+    else if(menu[menuSelected] == "Other" && menuLevel == 1) {
+      if(otherMenu[otherMenuSelected] == "Conn") {
+        drawMessage(otherConnMessage);
+      } else if(otherMenu[otherMenuSelected] == "Setup") {
+        drawMessage(otherSetupMessage);
+      } else if(otherMenu[otherMenuSelected] == "Info") {
+        drawMessage(otherInfoMessage);
       }
-      else {
-        // Set message
-        drawMessage("Highlight a macro number to view details.");
+    }
+
+    // Reset Message when returning to Back submenu item
+    if(menuLevel == 1) {
+      if(menu[menuSelected] == "Jog" && jogMenuSelected == 0) {
+        drawMessage(jogMessage);
       }
+      //else if(menu[menuSelected] == "Home" && homeMenuSelected == 0) {
+      //  drawMessage(homeMessage);
+      //}
+      else if(menu[menuSelected] == "Macro" && macroMenuSelected == 0) {
+        drawMessage(macroMessage);
+      }
+      else if(menu[menuSelected] == "Other" && otherMenuSelected == 0) {
+        drawMessage(otherMessage);
+      }
+      //else if(menu[menuSelected] == "Main" && controlMenuSelected == 0) {
+      //  drawMessage(controlMenuMessage);
+      //}
     }
 
     drawMenu();
@@ -1138,7 +1194,6 @@ void loop() {
       }
       else if(jogMenu[jogMenuSelected] == "Y") {
         float distance = abs(jogY);
-
         int jogTimeMs = 0;
 
         if(jogY != 0) {
@@ -1159,7 +1214,6 @@ void loop() {
       }
       else if(jogMenu[jogMenuSelected] == "Z") {
         float distance = abs(jogY);
-
         int jogTimeMs = 0;
 
         if(jogY != 0) {

@@ -163,7 +163,6 @@
               context.fillStyle = e("selected").value;
               context.rect(320/4,240-(menuHeight*2),320/4,menuHeight);
               context.fill();
-              //context.stroke();
             }
 
             context.strokeStyle = e("border").value;
@@ -179,26 +178,18 @@
           context.beginPath();
           context.strokeStyle = e("border").value;
           context.fillStyle = e("backgroundalt").value;
-          context.roundRect(0,60,320,120,5);
+          context.roundRect(0,55,320,130,5);
           context.fill();
           context.stroke();
           context.font = "10px Arial";
           context.textAlign = "left";
           context.fillStyle = e("text").value;
 
-          /*
-          var measure = context.measureText("Last Message");
-          context.fillStyle = e("background").value;
-          context.fillRect(8,55,measure.width+5, 10);
-          context.fillStyle = e("text").value;
-          context.fillText("Last Message", 10, 63);
-          */
-
-          context.font = "18px Arial";
-          var messageHeight = 24;
-          context.fillText("Lorem ipsum dolor sit amet,", 5, 85);
-          context.fillText("consectetur adipiscing elit. Donec", 5, 85+(1*messageHeight));
-          context.fillText("iaculis efficitur porta.", 5, 85+(2*messageHeight));
+          context.font = "17px Arial";
+          var messageHeight = 22;
+          context.fillText("Lorem ipsum dolor sit amet,", 5, 73);
+          context.fillText("consectetur adipiscing elit. Donec", 5, 73+(1*messageHeight));
+          context.fillText("iaculis efficitur porta.", 5, 73+(2*messageHeight));
         }
       </script>
   </head>
