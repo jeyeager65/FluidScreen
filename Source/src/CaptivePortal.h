@@ -11,29 +11,10 @@
 DNSServer dnsServer;
 AsyncWebServer server(80);
 const byte DNS_PORT = 53;
-IPAddress apIP(192, 168, 8, 1);
-const String urlIP = "http://192.168.8.1";
+IPAddress apIP(4, 3, 2, 1);
+const String urlIP = "http://4.3.2.1";
 
 JsonObject saveJson;
-
-int16_t scanNetworkCount = 0;
-
-class CaptiveRequestHandler : public AsyncWebHandler {
-  public:
-    CaptiveRequestHandler() {}
-    virtual ~CaptiveRequestHandler() {}
-
-    bool canHandle(AsyncWebServerRequest *request){
-      return true;
-    }
-
-    void handleRequest(AsyncWebServerRequest *request) {
-      Serial.println("CaptiveRequestHandler - handleRequest");
-      AsyncWebServerResponse *response = request->beginResponse(302);
-      response->addHeader("Location", urlIP);
-      request->send(response);
-    }
-};
 
 void setupServer(){
 
@@ -41,8 +22,8 @@ void setupServer(){
     Serial.println("Error mounting SPIFFS file system");
   }
 
-  /*
   // Reference: https://github.com/CDFER/Captive-Portal-ESP32/blob/main/src/main.cpp
+
   // Required
 	server.on("/connecttest.txt", [](AsyncWebServerRequest *request) { Serial.println(request->url()); request->redirect("http://logout.net"); });	// windows 11 captive portal workaround
 	server.on("/wpad.dat", [](AsyncWebServerRequest *request) { Serial.println(request->url()); request->send(404); });								// Honestly don't understand what this is but a 404 stops win 10 keep calling this repeatedly and panicking the esp32 :)
@@ -55,8 +36,10 @@ void setupServer(){
 	server.on("/canonical.html", [](AsyncWebServerRequest *request) { Serial.println(request->url()); request->redirect(urlIP); });	   // firefox captive portal call home
 	server.on("/success.txt", [](AsyncWebServerRequest *request) { Serial.println(request->url()); request->send(200); });					   // firefox captive portal call home
 	server.on("/ncsi.txt", [](AsyncWebServerRequest *request) { Serial.println(request->url()); request->redirect(urlIP); });			   // windows call home
-  */
 
+  server.on("/hotspot-detect.html", HTTP_GET, [](AsyncWebServerRequest *request) { Serial.println("Apple - hotspot detect"); request->redirect(urlIP); });
+  server.on("/library/test/success.html", HTTP_GET, [](AsyncWebServerRequest *request) { Serial.println("Apple - library test"); request->redirect(urlIP); });
+  
   server.on("/favicon.ico", [](AsyncWebServerRequest *request) { Serial.println(request->url()); request->send(404); });	// webpage icon
 
   server.on("/current", HTTP_GET, [](AsyncWebServerRequest *request){
@@ -135,7 +118,6 @@ void captivePortalSetup() {
     Serial.println("Err: Can't start DNS server!");
   }
 
-  server.addHandler(new CaptiveRequestHandler()).setFilter(ON_AP_FILTER); //only when requested from AP
   setupServer();
 
   server.begin();
@@ -143,7 +125,6 @@ void captivePortalSetup() {
 
 void captivePortalLoop() {
   dnsServer.processNextRequest();
-  delay(1);
 }
 
 #endif

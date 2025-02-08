@@ -103,6 +103,9 @@ uint16_t COLOR_STATUS_ALARM      = 0xF800;  // #ff0000
 uint16_t COLOR_STATUS_DISCONNECT = 0x780F;  // #7b007b
 uint16_t COLOR_STATUS_CONFIG     = 0xFB80;  // #ff7100
 
+uint16_t JOG_MAX_FEEDRATE_XY     = 2400;
+uint16_t JOG_MAX_FEEDRATE_Z      = 800;
+
 // Display Values
 String grblState = "UNKNOWN";
 String grblStatePrev = "UNKNOWN";
@@ -950,16 +953,14 @@ void loop() {
   {
     Position position = joystick.getPosition();
     // Feedrate - base on max axis
-    int maxFeedrate = 0;
-    int feedrate = 0;
+    uint16_t feedrate = 0;
     
     if(millis() - lastDrawTime > drawDelay) {
 
       if(jogMenu[jogMenuSelected] == "XY") {
-        maxFeedrate = 4000;
-        feedrate = maxFeedrate * ((float)abs(position.x)/100);
+        feedrate = JOG_MAX_FEEDRATE_XY * ((float)abs(position.x)/100);
         if(abs(position.x) < abs(position.y)) {
-          feedrate = maxFeedrate * ((float)abs(position.y)/100);
+          feedrate = JOG_MAX_FEEDRATE_XY * ((float)abs(position.y)/100);
         }
 
         jsInfoCanvas.fillScreen(COLOR_BG);
@@ -1001,8 +1002,7 @@ void loop() {
         tft.drawRGBBitmap((320/2)-(joystickCanvas.width()/2), 60, joystickCanvas.getBuffer(), joystickCanvas.width(), joystickCanvas.height());
       }
       else if(jogMenu[jogMenuSelected] == "X") {
-        maxFeedrate = 4000;
-        feedrate = maxFeedrate * ((float)abs(position.x)/100);
+        feedrate = JOG_MAX_FEEDRATE_XY * ((float)abs(position.x)/100);
 
         jsInfoCanvas.fillScreen(COLOR_BG);
         jsInfoCanvas.setFont(&FreeSans9pt7b);
@@ -1045,8 +1045,7 @@ void loop() {
         tft.drawRGBBitmap((320/2)-(joystickCanvas.width()/2), 60, joystickCanvas.getBuffer(), joystickCanvas.width(), joystickCanvas.height());
       }
       else if(jogMenu[jogMenuSelected] == "Y") {
-        maxFeedrate = 4000;
-        feedrate = maxFeedrate * ((float)abs(position.y)/100);
+        feedrate = JOG_MAX_FEEDRATE_XY * ((float)abs(position.y)/100);
 
         jsInfoCanvas.fillScreen(COLOR_BG);
         jsInfoCanvas.setFont(&FreeSans9pt7b);
@@ -1090,8 +1089,7 @@ void loop() {
         tft.drawRGBBitmap((320/2)-(joystickCanvas.width()/2), 60, joystickCanvas.getBuffer(), joystickCanvas.width(), joystickCanvas.height());
       }
       else if(jogMenu[jogMenuSelected] == "Z") {
-        maxFeedrate = 1200;
-        feedrate = maxFeedrate * ((float)abs(position.y)/100);
+        feedrate = JOG_MAX_FEEDRATE_Z * ((float)abs(position.y)/100);
 
         jsInfoCanvas.fillScreen(COLOR_BG);
         jsInfoCanvas.setFont(&FreeSans9pt7b);

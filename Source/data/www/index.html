@@ -14,6 +14,8 @@
     </style>
     <script type="text/javascript">
 
+        var baseURL = "http://4.3.2.1/";
+
         var settings;
 
         var statusText, statusColor;
@@ -227,120 +229,161 @@
             </article>
           </dialog>
         <div class="grid">
-        <section id="wifi">
-            <h2>WiFi Settings</h2>
-            <label>Network SSID<input type="text" id="ssid" name="ssid" /></label>
-            <label>Password<input type="password" id="password" name="password" /></label>
-        </section>
-        <section id="fluidnc">
-            <h2>FluidNC Settings</h2>
-            <label>URL (IP or Address)<input type="text" id="address" name="address" /></label>
-            <label>Port<input type="number" id="port" name="port" min="0" max="1023" /></label>
-        </section>
-    </div>
-    <div class="grid">
-        <section id="preview">
-          <h2>Preview</h2>
-          <canvas id="preview1" width="320px" height="240px">
+          <section id="wifi">
+              <h2>WiFi Settings</h2>
+              <label>Network SSID<input type="text" id="ssid" name="ssid" /></label>
+              <label>Password<input type="password" id="password" name="password" /></label>
+          </section>
+          <section id="fluidnc">
+              <h2>FluidNC Settings</h2>
+              <label>URL (IP or Address)<input type="text" id="address" name="address" /></label>
+              <label>Port<input type="number" id="port" name="port" min="0" max="1023" /></label>
+          </section>
+          
+        </div>
+        <div class="grid">
+          <section id="jog">
+            <h2>Jog Settings</h2>
+            <label>Max XY Feedrate (mm/min)<input type="number" id="maxFeedrateXY" name="maxFeedrateXY" /></label>
+            <label>Max Z Feedrate (mm/min)<input type="number" id="maxFeedrateZ" name="maxFeedrateZ" /></label>
+          </section>
+          <section id="preview">
+            <h2>Preview</h2>
+            <canvas id="preview1" width="320px" height="240px">
 
-          </canvas>
-          <br /><br />
-          <button onclick="loadDefaultColors()">Restore Default Colors</button>
-          <br /><br />
-          <button onclick="preview()">Preview on Device</button>
-        </section>
-        <section id="baseColors">
-            <h2>Base Theme Colors</h2>
-            <label>Primary <span id="primary_detail"></span>
-              <input type="color" id="primary" name="primary" oninput="updateColor(this);" onfocus="updateColor(this);" />
-              <input type="hidden" id="primary_rgb565" name="primary_rgb565" />
-            </label>
-            <label>Secondary <span id="secondary_detail"></span>
-              <input type="color" id="secondary" name="secondary" oninput="updateColor(this);" onfocus="updateColor(this);" />
-              <input type="hidden" id="secondary_rgb565" name="secondary_rgb565" />
-            </label>
-            <label>Background <span id="background_detail"></span>
-              <input type="color" id="background" name="background" oninput="updateColor(this);" onfocus="updateColor(this);" />
-              <input type="hidden" id="background_rgb565" name="background_rgb565" />
-            </label>
-            <label>Background Alt <span id="backgroundalt_detail"></span>
-              <input type="color" id="backgroundalt" name="backgroundalt" oninput="updateColor(this);" onfocus="updateColor(this);" />
-              <input type="hidden" id="backgroundalt_rgb565" name="backgroundalt_rgb565" />
-            </label>
-            <label>Background Panel <span id="backgroundpanel_detail"></span>
-              <input type="color" id="backgroundpanel" name="backgroundpanel" oninput="updateColor(this);" onfocus="updateColor(this);" />
-              <input type="hidden" id="backgroundpanel_rgb565" name="backgroundpanel_rgb565" />
-            </label>
-            <label>Border <span id="border_detail"></span>
-              <input type="color" id="border" name="border" oninput="updateColor(this);" onfocus="updateColor(this);" />
-              <input type="hidden" id="border_rgb565" name="border_rgb565" />
-            </label>
-            <label>Selected <span id="selected_detail"></span>
-              <input type="color" id="selected" name="selected" oninput="updateColor(this);" onfocus="updateColor(this);" />
-              <input type="hidden" id="selected_rgb565" name="selected_rgb565" />
-            </label>
-            <label>Text <span id="text_detail"></span>
-              <input type="color" id="text" name="text" oninput="updateColor(this);" onfocus="updateColor(this);" />
-              <input type="hidden" id="text_rgb565" name="text_rgb565" />
-            </label>
-            <label>QR Code <span id="qrcode_detail"></span>
-              <input type="color" id="qrcode" name="qrcode" oninput="updateColor(this);" onfocus="updateColor(this);" />
-              <input type="hidden" id="qrcode_rgb565" name="qrcode_rgb565" />
-            </label>
-            <label>QR Code Background <span id="qrcodebg_detail"></span>
-              <input type="color" id="qrcodebg" name="qrcodebg" oninput="updateColor(this);" onfocus="updateColor(this);" />
-              <input type="hidden" id="qrcodebg_rgb565" name="qrcodebg_rgb565" />
-            </label>
-        </section>
-        <section id="statusColors">
-            <h2>Status Colors</h2>
-            <label>Default <span id="state_default_detail"></span>
-                <input type="color" id="state_default" name="state_default" data-label="DEFAULT"  oninput="updateColor(this);"  onfocus="updateColor(this);" />
-                <input type="hidden" id="state_default_rgb565" name="state_default_rgb565" />
-            </label>
-            <label>Idle <span id="state_idle_detail"></span>
-                <input type="color" id="state_idle" name="state_idle" data-label="IDLE"  oninput="updateColor(this);"  onfocus="updateColor(this);" />
-                <input type="hidden" id="state_idle_rgb565" name="state_idle_rgb565" />
-            </label>
-            <label>Jog <span id="state_jog_detail"></span>
-                <input type="color" id="state_jog" name="state_jog" data-label="JOG"  oninput="updateColor(this);"  onfocus="updateColor(this);" />
-                <input type="hidden" id="state_jog_rgb565" name="state_jog_rgb565" />
-            </label>
-            <label>Run <span id="state_run_detail"></span>
-                <input type="color" id="state_run" name="state_run" data-label="RUN"  oninput="updateColor(this);"  onfocus="updateColor(this);" />
-                <input type="hidden" id="state_run_rgb565" name="state_run_rgb565" />
-            </label>
-            <label>Hold <span id="state_hold_detail"></span>
-                <input type="color" id="state_hold" name="state_hold" data-label="HOLD"  oninput="updateColor(this);"  onfocus="updateColor(this);" />
-                <input type="hidden" id="state_hold_rgb565" name="state_hold_rgb565" />
-            </label>
-            <label>Home <span id="state_home_detail"></span>
-                <input type="color" id="state_home" name="state_home" data-label="HOME"  oninput="updateColor(this);"  onfocus="updateColor(this);" />
-                <input type="hidden" id="state_home_rgb565" name="state_home_rgb565" />
-            </label>
-            <label>Alarm <span id="state_alarm_detail"></span>
-                <input type="color" id="state_alarm" name="state_alarm" data-label="ALARM"  oninput="updateColor(this);"  onfocus="updateColor(this);" />
-                <input type="hidden" id="state_alarm_rgb565" name="state_alarm_rgb565" />
-            </label>
-            <label>Disconnect <span id="state_disconnect_detail"></span>
-                <input type="color" id="state_disconnect" name="state_disconnect" data-label="DISCONNECTED"  oninput="updateColor(this);"  onfocus="updateColor(this);" />
-                <input type="hidden" id="state_disconnect_rgb565" name="state_disconnect_rgb565" />
-            </label>
-            <label>Configuration <span id="state_config_detail"></span>
-                <input type="color" id="state_config" name="state_config" data-label="CONFIGURATION"  oninput="updateColor(this);"  onfocus="updateColor(this);" />
-                <input type="hidden" id="state_config_rgb565" name="state_config_rgb565" />
-            </label>
-            <label style="visibility: hidden;">Hidden <span></span>
-                <input type="color" />
-            </label>
-        </section>
+            </canvas>
+            <br /><br />
+            <button onclick="loadDefaultColors()" style="margin-right: 10px; margin-bottom: 10px;">Restore Default Colors</button>
+            <button onclick="preview()">Preview on Device</button>
+          </section>
+        </div>
+        <div class="grid">
+          
+          <section id="baseColors">
+              <h2>Base Theme Colors</h2>
+              <label>Primary <span id="primary_detail"></span>
+                <input type="color" id="primary" name="primary" oninput="updateColor(this);" onfocus="updateColor(this);" />
+                <input type="hidden" id="primary_rgb565" name="primary_rgb565" />
+              </label>
+              <label>Secondary <span id="secondary_detail"></span>
+                <input type="color" id="secondary" name="secondary" oninput="updateColor(this);" onfocus="updateColor(this);" />
+                <input type="hidden" id="secondary_rgb565" name="secondary_rgb565" />
+              </label>
+              <label>Background <span id="background_detail"></span>
+                <input type="color" id="background" name="background" oninput="updateColor(this);" onfocus="updateColor(this);" />
+                <input type="hidden" id="background_rgb565" name="background_rgb565" />
+              </label>
+              <label>Background Alt <span id="backgroundalt_detail"></span>
+                <input type="color" id="backgroundalt" name="backgroundalt" oninput="updateColor(this);" onfocus="updateColor(this);" />
+                <input type="hidden" id="backgroundalt_rgb565" name="backgroundalt_rgb565" />
+              </label>
+              <label>Background Panel <span id="backgroundpanel_detail"></span>
+                <input type="color" id="backgroundpanel" name="backgroundpanel" oninput="updateColor(this);" onfocus="updateColor(this);" />
+                <input type="hidden" id="backgroundpanel_rgb565" name="backgroundpanel_rgb565" />
+              </label>
+              <label>Border <span id="border_detail"></span>
+                <input type="color" id="border" name="border" oninput="updateColor(this);" onfocus="updateColor(this);" />
+                <input type="hidden" id="border_rgb565" name="border_rgb565" />
+              </label>
+              <label>Selected <span id="selected_detail"></span>
+                <input type="color" id="selected" name="selected" oninput="updateColor(this);" onfocus="updateColor(this);" />
+                <input type="hidden" id="selected_rgb565" name="selected_rgb565" />
+              </label>
+              <label>Text <span id="text_detail"></span>
+                <input type="color" id="text" name="text" oninput="updateColor(this);" onfocus="updateColor(this);" />
+                <input type="hidden" id="text_rgb565" name="text_rgb565" />
+              </label>
+              <label>QR Code <span id="qrcode_detail"></span>
+                <input type="color" id="qrcode" name="qrcode" oninput="updateColor(this);" onfocus="updateColor(this);" />
+                <input type="hidden" id="qrcode_rgb565" name="qrcode_rgb565" />
+              </label>
+              <label>QR Code Background <span id="qrcodebg_detail"></span>
+                <input type="color" id="qrcodebg" name="qrcodebg" oninput="updateColor(this);" onfocus="updateColor(this);" />
+                <input type="hidden" id="qrcodebg_rgb565" name="qrcodebg_rgb565" />
+              </label>
+          </section>
+          <section id="statusColors">
+              <h2>Status Colors</h2>
+              <label>Default <span id="state_default_detail"></span>
+                  <input type="color" id="state_default" name="state_default" data-label="DEFAULT"  oninput="updateColor(this);"  onfocus="updateColor(this);" />
+                  <input type="hidden" id="state_default_rgb565" name="state_default_rgb565" />
+              </label>
+              <label>Idle <span id="state_idle_detail"></span>
+                  <input type="color" id="state_idle" name="state_idle" data-label="IDLE"  oninput="updateColor(this);"  onfocus="updateColor(this);" />
+                  <input type="hidden" id="state_idle_rgb565" name="state_idle_rgb565" />
+              </label>
+              <label>Jog <span id="state_jog_detail"></span>
+                  <input type="color" id="state_jog" name="state_jog" data-label="JOG"  oninput="updateColor(this);"  onfocus="updateColor(this);" />
+                  <input type="hidden" id="state_jog_rgb565" name="state_jog_rgb565" />
+              </label>
+              <label>Run <span id="state_run_detail"></span>
+                  <input type="color" id="state_run" name="state_run" data-label="RUN"  oninput="updateColor(this);"  onfocus="updateColor(this);" />
+                  <input type="hidden" id="state_run_rgb565" name="state_run_rgb565" />
+              </label>
+              <label>Hold <span id="state_hold_detail"></span>
+                  <input type="color" id="state_hold" name="state_hold" data-label="HOLD"  oninput="updateColor(this);"  onfocus="updateColor(this);" />
+                  <input type="hidden" id="state_hold_rgb565" name="state_hold_rgb565" />
+              </label>
+              <label>Home <span id="state_home_detail"></span>
+                  <input type="color" id="state_home" name="state_home" data-label="HOME"  oninput="updateColor(this);"  onfocus="updateColor(this);" />
+                  <input type="hidden" id="state_home_rgb565" name="state_home_rgb565" />
+              </label>
+              <label>Alarm <span id="state_alarm_detail"></span>
+                  <input type="color" id="state_alarm" name="state_alarm" data-label="ALARM"  oninput="updateColor(this);"  onfocus="updateColor(this);" />
+                  <input type="hidden" id="state_alarm_rgb565" name="state_alarm_rgb565" />
+              </label>
+              <label>Disconnect <span id="state_disconnect_detail"></span>
+                  <input type="color" id="state_disconnect" name="state_disconnect" data-label="DISCONNECTED"  oninput="updateColor(this);"  onfocus="updateColor(this);" />
+                  <input type="hidden" id="state_disconnect_rgb565" name="state_disconnect_rgb565" />
+              </label>
+              <label>Configuration <span id="state_config_detail"></span>
+                  <input type="color" id="state_config" name="state_config" data-label="CONFIGURATION"  oninput="updateColor(this);"  onfocus="updateColor(this);" />
+                  <input type="hidden" id="state_config_rgb565" name="state_config_rgb565" />
+              </label>
+              <label style="visibility: hidden;">Hidden <span></span>
+                  <input type="color" />
+              </label>
+          </section>
         </div>
     </main>
+    <dialog id="saveSuccessDialog">
+      <article>
+        <header>
+          <button aria-label="Close" rel="prev" onclick="e('saveSuccessDialog').close();"></button>
+          <p>
+            <strong>Message</strong>
+          </p>
+        </header>
+        <p>
+          The settings were saved successfully. Click the "Restart" button to return to standard operating mode.
+        </p>
+        <footer>
+          <button onclick="restart();">Restart</button>
+          <button onclick="e('saveSuccessDialog').close();">Close</button>
+        </footer>
+      </article>
+    </dialog>
+    <dialog id="restartDialog">
+      <article>
+        <header>
+          <button aria-label="Close" rel="prev" onclick="e('restartDialog').close();"></button>
+          <p>
+            <strong>Message</strong>
+          </p>
+        </header>
+        <p>
+          FluidScreen will restart in 5 seconds and return to standard operating mode.
+        </p>
+        <footer>
+          <button onclick="e('restartDialog').close();">Close</button>
+        </footer>
+      </article>
+    </dialog>
   </body>
   <script type="text/javascript">
 
     function loadDefaultColors() {
-      fetch("default")
+      fetch(baseURL + "default")
         .then(response => response.json())
         .then(data => {
           console.log(JSON.stringify(data));
@@ -378,6 +421,9 @@
       settings.Connection.Address = e("address").value;
       settings.Connection.Port = parseInt(e("port").value);
 
+      settings.JogSettings.MaxFeedrateXY = e("maxFeedrateXY").value;
+      settings.JogSettings.MaxFeedrateZ = e("maxFeedrateZ").value;
+
       settings.ThemeColors.Primary = parseInt(e("primary_rgb565").value);
       settings.ThemeColors.Secondary = parseInt(e("secondary_rgb565").value);
       settings.ThemeColors.Background = parseInt(e("background_rgb565").value);
@@ -404,13 +450,17 @@
       
       syncSettings();
 
-      fetch("update",
+      fetch(baseURL + "update",
         {
           method: "POST",
           headers: new Headers({"Content-Type": "application/json"}),
           body: JSON.stringify(settings)
         }
-      );
+      ).then(response => {
+        if(response.status == 200) {
+          e("saveSuccessDialog").showModal();
+        }
+      });
     }
 
     function preview() {
@@ -418,7 +468,7 @@
       
       syncSettings();
 
-      fetch("preview",
+      fetch(baseURL + "preview",
         {
           method: "POST",
           headers: new Headers({"Content-Type": "application/json"}),
@@ -428,10 +478,12 @@
     }
 
     function restart() {
-      fetch("restart");
+      fetch(baseURL + "restart");
+      e('saveSuccessDialog').close();
+      e("restartDialog").showModal();
     }
 
-    fetch("current")
+    fetch(baseURL + "current")
       .then(response => response.json())
       .then(data => {
         console.log(JSON.stringify(data));
@@ -442,6 +494,9 @@
         e("password").value = data.Connection.Password;
         e("address").value = data.Connection.Address;
         e("port").value = data.Connection.Port;
+
+        e("maxFeedrateXY").value = data.JogSettings.MaxFeedrateXY;
+        e("maxFeedrateZ").value = data.JogSettings.MaxFeedrateZ;
 
         loadColor(e("primary"), data.ThemeColors.Primary);
         loadColor(e("secondary"), data.ThemeColors.Secondary);

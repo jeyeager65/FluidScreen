@@ -14,6 +14,10 @@ struct FluidScreenConnection {
     uint16_t Port;
 };
 
+struct FluidScreenJogSettings {
+    uint16_t MaxFeedrateXY, MaxFeedrateZ;
+};
+
 struct FluidScreenThemeColors {
     uint16_t Primary, Secondary, Background, BackgroundAlt, BackgroundPanel, 
              Border, Selected, Text, QrCode, QrCodeBg;
@@ -27,6 +31,7 @@ struct FluidScreenSettings {
     bool IsInitialized;
     bool IsConfigMode;
     struct FluidScreenConnection Connection;
+    struct FluidScreenJogSettings JogSettings;
     struct FluidScreenThemeColors ThemeColors;
     struct FluidScreenStatusColors StatusColors;  
 };
@@ -41,6 +46,9 @@ void initDefaultSettings() {
     DefaultSettings.Connection.Password = "";
     DefaultSettings.Connection.Address = "fluidnc.local";
     DefaultSettings.Connection.Port = 82;
+
+    DefaultSettings.JogSettings.MaxFeedrateXY = 2400;
+    DefaultSettings.JogSettings.MaxFeedrateZ = 800;
 
     DefaultSettings.ThemeColors.Primary         = 0x01EC;  // #003d63
     DefaultSettings.ThemeColors.Secondary       = 0x434F;  // #42697b
@@ -71,6 +79,8 @@ void debugSettings(FluidScreenSettings &settings) {
     Serial.printf("Connection.Password: %s\n", settings.Connection.Password);
     Serial.printf("Connection.Address: %s\n", settings.Connection.Address);
     Serial.printf("Connection.Port: %i\n", settings.Connection.Port);
+    Serial.printf("JogSettings.MaxFeedrateXY: %i\n", settings.JogSettings.MaxFeedrateXY);
+    Serial.printf("JogSettings.MaxFeedrateZ: %i\n", settings.JogSettings.MaxFeedrateZ);
     Serial.printf("ThemeColors.Primary: %u\n", settings.ThemeColors.Primary);
     Serial.printf("ThemeColors.Secondary: %u\n", settings.ThemeColors.Secondary);
     Serial.printf("ThemeColors.Background: %u\n", settings.ThemeColors.Background);
@@ -102,6 +112,9 @@ void saveSettings(FluidScreenSettings &settings, bool checkForChange = false) {
         if(!checkForChange || settings.Connection.Password != CurrentSettings.Connection.Password) { preferences.putString("Password", settings.Connection.Password); }
         if(!checkForChange || settings.Connection.Address != CurrentSettings.Connection.Address) { preferences.putString("Address", settings.Connection.Address); }
         if(!checkForChange || settings.Connection.Port != CurrentSettings.Connection.Port) { preferences.putUShort("Port", settings.Connection.Port); }
+        
+        if(!checkForChange || settings.JogSettings.MaxFeedrateXY != CurrentSettings.JogSettings.MaxFeedrateXY) { preferences.putUShort("MaxFeedrateXY", settings.JogSettings.MaxFeedrateXY); }
+        if(!checkForChange || settings.JogSettings.MaxFeedrateZ != CurrentSettings.JogSettings.MaxFeedrateZ) { preferences.putUShort("MaxFeedrateZ", settings.JogSettings.MaxFeedrateZ); }
 
         if(!checkForChange || settings.ThemeColors.Primary != CurrentSettings.ThemeColors.Primary) { preferences.putUShort("Primary", settings.ThemeColors.Primary); }
         if(!checkForChange || settings.ThemeColors.Secondary != CurrentSettings.ThemeColors.Secondary) { preferences.putUShort("Secondary", settings.ThemeColors.Secondary); }
@@ -170,6 +183,9 @@ void settingsSetup() {
     CurrentSettings.Connection.Address = preferences.getString("Address", DefaultSettings.Connection.Address);
     CurrentSettings.Connection.Port = preferences.getUShort("Port", DefaultSettings.Connection.Port);
 
+    CurrentSettings.JogSettings.MaxFeedrateXY = preferences.getUShort("MaxFeedrateXY", DefaultSettings.JogSettings.MaxFeedrateXY);
+    CurrentSettings.JogSettings.MaxFeedrateZ = preferences.getUShort("MaxFeedrateZ", DefaultSettings.JogSettings.MaxFeedrateZ);
+
     CurrentSettings.ThemeColors.Primary = preferences.getUShort("Primary", DefaultSettings.ThemeColors.Primary);
     CurrentSettings.ThemeColors.Secondary = preferences.getUShort("Secondary", DefaultSettings.ThemeColors.Secondary);
     CurrentSettings.ThemeColors.Background = preferences.getUShort("Background", DefaultSettings.ThemeColors.Background);
@@ -205,16 +221,18 @@ void settingsSetup() {
 
 FluidScreenSettings getSettingsFromJson(JsonObject doc) {
     FluidScreenSettings settings;
-    
     settings.IsInitialized = doc["IsInitialized"];
     settings.IsConfigMode = doc["IsConfigMode"];
 
     JsonObject connection = doc["Connection"];
-    
     settings.Connection.SSID = (const char*)connection["SSID"];
     settings.Connection.Password = (const char*)connection["Password"];
     settings.Connection.Address = (const char*)connection["Address"];
     settings.Connection.Port = connection["Port"];
+
+    JsonObject jogSettings = doc["JogSettings"];
+    settings.JogSettings.MaxFeedrateXY = jogSettings["MaxFeedrateXY"];
+    settings.JogSettings.MaxFeedrateZ = jogSettings["MaxFeedrateZ"];
 
     JsonObject themeColors = doc["ThemeColors"];
     settings.ThemeColors.Primary = themeColors["Primary"];
@@ -253,6 +271,10 @@ String getJsonFromSettings(FluidScreenSettings& settings) {
     connection["Password"] = settings.Connection.Password;
     connection["Address"] = settings.Connection.Address;
     connection["Port"] = settings.Connection.Port;
+
+    JsonObject jogSettings = doc["JogSettings"].to<JsonObject>();
+    jogSettings["MaxFeedrateXY"] = settings.JogSettings.MaxFeedrateXY;
+    jogSettings["MaxFeedrateZ"] = settings.JogSettings.MaxFeedrateZ;
 
     JsonObject themeColors = doc["ThemeColors"].to<JsonObject>();
     themeColors["Primary"] = settings.ThemeColors.Primary;
