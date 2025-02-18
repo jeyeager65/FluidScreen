@@ -24,7 +24,7 @@ void initWebSocket();
 #include "CaptivePortal.h"
 #include "SPIFFS.h"
 
-const char* version = "1.0.0-20250130";
+const char* version = "1.0.1-20250218";
 
 bool wsFirstConnectAttempt = true;
 bool wsDisconnected = false;
@@ -75,6 +75,7 @@ unsigned long drawDelay = 50;
 unsigned long lastMacroInfoTime = 0;
 unsigned long macroInfoDelay = 300;
 
+uint16_t feedrate = 0;
 unsigned long lastJogTime = 0;
 unsigned long jogDelay = 200;
 bool jogActive = false;
@@ -617,6 +618,9 @@ void setup() {
   settingsSetup();
   setupColors(CurrentSettings);
 
+  JOG_MAX_FEEDRATE_XY = CurrentSettings.JogSettings.MaxFeedrateXY;
+  JOG_MAX_FEEDRATE_Z = CurrentSettings.JogSettings.MaxFeedrateZ;
+
   if(CurrentSettings.IsConfigMode) {
     captivePortalSetup();
 
@@ -864,6 +868,10 @@ int calcJogTimeMs(int feedrateMmMin, float distance) {
 		ms = 10;
 	}
 
+  if(ms > 300) {
+    ms = 300;
+  }
+
 	return (int)ms;
 }
 
@@ -952,11 +960,9 @@ void loop() {
   if(menu[menuSelected] == "Jog" && menuLevel == 1) 
   {
     Position position = joystick.getPosition();
-    // Feedrate - base on max axis
-    uint16_t feedrate = 0;
     
     if(millis() - lastDrawTime > drawDelay) {
-
+      // Feedrate - base on max axis
       if(jogMenu[jogMenuSelected] == "XY") {
         feedrate = JOG_MAX_FEEDRATE_XY * ((float)abs(position.x)/100);
         if(abs(position.x) < abs(position.y)) {
@@ -1145,8 +1151,14 @@ void loop() {
       if(abs(jogX) < 0.001) { jogX = 0; }
       if(abs(jogY) < 0.001) { jogY = 0; }
 
-      if(feedrate == 0) {
-        // Don't do anything
+      if(feedrate == 0 || (jogX == 0 && jogY == 0)) {
+        // Cancel Jog if active
+        if(jogActive) {
+          Serial.println("Cancel Jog");
+          webSocket.sendTXT(0x85);
+          jogActive = false;
+          jogDelay = 200;
+        }
       }
       else if(jogMenu[jogMenuSelected] == "XY") {
         float distance = sqrt(pow(jogX, 2) + pow(jogY, 2));
@@ -1162,11 +1174,6 @@ void loop() {
           jogActive = true;
           jogDelay = jogTimeMs;
           lastJogTime = millis();
-        } else if(jogActive) {
-          Serial.println("Cancel Jog");
-          webSocket.sendTXT(0x85);
-          jogActive = false;
-          jogDelay = 200;
         }
       }
       else if(jogMenu[jogMenuSelected] == "X") {
@@ -1183,11 +1190,6 @@ void loop() {
           jogActive = true;
           jogDelay = jogTimeMs;
           lastJogTime = millis();
-        } else if(jogActive) {
-          Serial.println("Cancel Jog");
-          webSocket.sendTXT(0x85);
-          jogActive = false;
-          jogDelay = 200;
         }
       }
       else if(jogMenu[jogMenuSelected] == "Y") {
@@ -1203,11 +1205,6 @@ void loop() {
           jogActive = true;
           jogDelay = jogTimeMs;
           lastJogTime = millis();
-        } else if(jogActive) {
-          Serial.println("Cancel Jog");
-          webSocket.sendTXT(0x85);
-          jogActive = false;
-          jogDelay = 200;
         }
       }
       else if(jogMenu[jogMenuSelected] == "Z") {
@@ -1223,11 +1220,6 @@ void loop() {
           jogActive = true;
           jogDelay = jogTimeMs;
           lastJogTime = millis();
-        } else if(jogActive) {
-          Serial.println("Cancel Jog");
-          webSocket.sendTXT(0x85);
-          jogActive = false;
-          jogDelay = 200;
         }
       }
     }
