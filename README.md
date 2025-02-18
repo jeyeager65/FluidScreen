@@ -229,9 +229,6 @@ This allows the script to know which macro and whether or not it should just dis
 
 # Notes
 
-## Known Issues
-- The Captive Portal page doesn't automatically display on Android.
-
 ## Future Enhancements
 > None of these are guaranteed but are things I would like to do in the future.
 - Add battery with charging circuit
